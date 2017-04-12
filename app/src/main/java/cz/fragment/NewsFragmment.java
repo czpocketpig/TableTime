@@ -18,7 +18,6 @@ import com.example.chenzhang.myapplication.R;
 public class NewsFragmment extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
 
-
         return inflater.inflate(R.layout.news,container,false);
 
     }

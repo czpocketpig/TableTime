@@ -1,32 +1,35 @@
 package cz.fragment;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
-import android.graphics.Color;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-
-import android.widget.TextView;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.chenzhang.myapplication.R;
-import com.wrbug.editspinner.EditSpinner;
-import com.wrbug.editspinner.SimpleAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import cn.bmob.v3.BmobQuery;
+import cn.bmob.v3.datatype.BmobQueryResult;
+import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.SQLQueryListener;
+import cn.bmob.v3.listener.SaveListener;
+import cz.MyApplication;
 import cz.adapter.MyRecyclerViewAdapter;
+import cz.bean.Pingjia;
+import cz.bean.courses;
 import cz.utils.RecyclerDivider;
-
-import static android.content.ContentValues.TAG;
 
 
 /**
@@ -35,54 +38,77 @@ import static android.content.ContentValues.TAG;
 
 public class ClassTableFragment extends android.support.v4.app.Fragment {
     @Nullable
-//    private final int WC = ViewGroup.LayoutParams.WRAP_CONTENT;
-//    private final int FP = ViewGroup.LayoutParams.MATCH_PARENT;
+
     private View view;
     private RecyclerView recyclerView;
-    private List<String> mDatas;
-    private  MyRecyclerViewAdapter mAdapter;
-    private  EditSpinner editSpinner;
-
+    private List<String> mitems;
+    private MyRecyclerViewAdapter mAdapter;
+    private EditText pingjia;
+    private String class_id;
+    private List<courses> list;
 
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-
         view = inflater.inflate(R.layout.classtable, container, false);
+        initItemCount();
         initData();
         initView();
-        initEvent();
-
         return view;
 
     }
 
-       public void initView(){
-
-           recyclerView= (RecyclerView) view.findViewById(R.id.id_recyclerview);
-           mAdapter = new MyRecyclerViewAdapter(getActivity(), mDatas);
-           recyclerView.setLayoutManager(new StaggeredGridLayoutManager(6, StaggeredGridLayoutManager.VERTICAL));
-           recyclerView.setAdapter(mAdapter);
-           recyclerView.addItemDecoration(new RecyclerDivider(getActivity()));
-
-       }
-
-    protected void initData()
-    {
-        mDatas = new ArrayList<String>();
-        for (int i = 0; i < 54; i++)
-        {
-            mDatas.add("" + i);
-        }
+    public void initView() {
+        recyclerView = (RecyclerView) view.findViewById(R.id.id_timetable);
     }
-    private void initEvent()
-    {
-        mAdapter.setOnItemClickLitener(new MyRecyclerViewAdapter.OnItemClickLitener()
-        {
+
+    protected void initItemCount() {
+        mitems = new ArrayList<String>();
+        for (int i = 0; i < 54; i++) {
+            mitems.add("" + i);
+        }
+
+
+    }
+
+    public void initData() {
+        SharedPreferences sharedPreferences = MyApplication.getContext().getSharedPreferences("stu_info", Context.MODE_PRIVATE);
+        class_id = sharedPreferences.getString("classid", "");
+        String bql = "select * from courses where class_id='" + class_id + "'";
+        new BmobQuery<courses>().doSQLQuery(bql, new SQLQueryListener<courses>() {
             @Override
-            public void onItemClick(View view, int position)
-            {
+
+            public void done(BmobQueryResult<courses> result, BmobException e) {
+
+                if (e == null) {
+                    list = (List<courses>) result.getResults();
+                    setAdapter();
+                    Log.i("smile", "查询成功" + list.size());
+                } else {
+                    Log.i("smile", "查询成功，无数据返回");
+                }
+            }
+
+
+        });
+
+
+    }
+
+
+    private void setAdapter() {
+        mAdapter = new MyRecyclerViewAdapter(getActivity(), mitems, list);
+        recyclerView.setLayoutManager(new StaggeredGridLayoutManager(6, StaggeredGridLayoutManager.VERTICAL));
+        recyclerView.setAdapter(mAdapter);
+        recyclerView.addItemDecoration(new RecyclerDivider(getActivity()));
+        initEvent();
+    }
+
+
+    private void initEvent() {
+        mAdapter.setOnItemClickLitener(new MyRecyclerViewAdapter.OnItemClickLitener() {
+            @Override
+            public void onItemClick(View view, int position) {
                 Toast.makeText(getActivity(), position + " click",
                         Toast.LENGTH_SHORT).show();
-                Log.d(TAG, "onItemClick: " + position);
                 doDailog();
 
             }
@@ -90,135 +116,52 @@ public class ClassTableFragment extends android.support.v4.app.Fragment {
     }
 
 
-     public  void doDailog(){
+    public void doDailog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        View view = View.inflate(getActivity(), R.layout.dailog, null);
+        pingjia = (EditText) view.findViewById(R.id.PJ);
 
-         AlertDialog.Builder builder=new AlertDialog.Builder(getActivity());
-         View view = View.inflate(getActivity(), R.layout.dailog, null);
-         editSpinner = (EditSpinner) view.findViewById(R.id.editSpinner1);
-         SimpleAdapter simpAdapter=new SimpleAdapter(getContext(),mDatas);
-         editSpinner.setAdapter(simpAdapter);
+        builder.setView(view);
+        builder.setIcon(R.drawable.book);
+        builder.setTitle("让我们一起吐槽吧");
+        //确认按钮
+        builder.setPositiveButton("提交", new DialogInterface.OnClickListener() {
 
+            public void onClick(DialogInterface arg0, int arg1) {
+                // TODO Auto-generated method stub
+                String content_pj = pingjia.getText().toString().trim();
+                if (content_pj == null || "".equals(content_pj)) {
+                    Toast.makeText(MyApplication.getContext(), "你还没留下什么呢…(⊙＿⊙；)…", Toast.LENGTH_SHORT).show();
 
+                } else {
+                    Pingjia pj = new Pingjia();
+                    pj.setContent(pingjia.getText().toString());
+                    pj.setStudent_id("12013054066");
+                    pj.save(new SaveListener<String>() {
+                        @Override
+                        public void done(String objectId, BmobException e) {
+                            if (e == null) {
+                                Toast.makeText(MyApplication.getContext(), "吐槽成功\\(^o^)/YES!", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(MyApplication.getContext(), "额，好像出现了点小问题(@_@;)" + e, Toast.LENGTH_SHORT).show();
+                            }
+                        }
 
-         builder.setView(view);
-         builder.setIcon(R.drawable.book);
-         builder.setTitle("选课");
-
-
-
-
-
-         //确认按钮
-         builder.setPositiveButton("ok", new DialogInterface.OnClickListener() {
-             public void onClick(DialogInterface arg0, int arg1) {
-                 // TODO Auto-generated method stub
-                 Toast.makeText(getActivity(), "ok", Toast.LENGTH_SHORT).show();
-             }
-         });
-         //取消
-         builder.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
-
-             @Override
-             public void onClick(DialogInterface arg0, int arg1) {
-                 // TODO Auto-generated method stub
-
-             }
-         });
-         final AlertDialog dialog = builder.create();
-         dialog.show();
-
-     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    private void initView2() {
-        Log.d("TAG", "initView: ");
-//        TableLayout tableLayout = (TableLayout) view.findViewById(R.id.table);
-//        tableLayout.setStretchAllColumns(true);
-//        tableLayout.setDividerDrawable(getResources().getDrawable(R.drawable.item_divider));//这个就是中间的虚线
-//        tableLayout.setShowDividers(LinearLayout.SHOW_DIVIDER_MIDDLE);//设置分割线为中间显示
-//
-//        for (int row = 0; row < 9; row++) {
-//            TableRow tableRow = new TableRow(getActivity());
-//
-//
-//            for (int col = 0; col < 6; col++) {
-//                //tv用于显示
-//                TextView tv = new TextView(getActivity());
-//                tv.setHeight(100);
-//
-//
-//                if (col == 0 && row == 0) {
-//                    tv.setText("1");
-//
-//                    tableRow.addView(tv);
-//                }
-//                 else{
-//                    if (col != 0 && row != 0)
-//                    {
-//                        tv.setText("2");
-//                        tv.setBackgroundColor(Color.BLUE);
-//                        tv.setOnClickListener(new View.OnClickListener() {
-//                            @Override
-//                            public void onClick(View v) {
-//                                Toast.makeText(getContext(),"TEST",Toast.LENGTH_SHORT).show();
-//                            }
-//                        });
-//                        tableRow.addView(tv);
-//
-//                    }
-//                    else{
-//                        if (col == 0 && row != 0)
-//                        {
-//                            tv.setText("第" +num[row-1]+"节");
-//                           tv.setTop(10);
-//                            tableRow.addView(tv);
-//
-//
-//                        }
-//                        else{
-//
-//                            tv.setText("周"+num[col-1]);
-//                            tableRow.addView(tv);
-//                        }
-//                    }
-//
-//
-//
-//                }
-//
-//
-//            }
-//            //新建的TableRow添加到TableLayout
-//            tableLayout.addView(tableRow, new TableLayout.LayoutParams(FP, WC,1));
-//        }
-
-
-    }
-
-    public void addClasses(TextView tv) {
-        tv.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(getContext(), "" + v.getId(), Toast.LENGTH_LONG).show();
+                    });
+                }
             }
-
-
         });
+        //取消
+        builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
 
+            @Override
+            public void onClick(DialogInterface arg0, int arg1) {
+                // TODO Auto-generated method stub
+                arg0.dismiss();
+            }
+        });
+        final AlertDialog dialog = builder.create();
+        dialog.show();
 
     }
 

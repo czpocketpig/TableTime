@@ -1,6 +1,7 @@
 package cz;
 
 import android.app.Application;
+import android.content.Context;
 
 import cn.bmob.v3.Bmob;
 
@@ -9,9 +10,12 @@ import cn.bmob.v3.Bmob;
  */
 
 public class MyApplication extends Application {
+
+    private static Context context;
     @Override
     public void onCreate() {
         super.onCreate();
+        context = getApplicationContext();
         Bmob.initialize(this, "df36219d7206e27b8a89ad50f40ea276");
 
         //第二：自v3.4.7版本开始,设置BmobConfig,允许设置请求超时时间、文件分片上传时每片的大小、文件的过期时间(单位为秒)，
@@ -27,4 +31,9 @@ public class MyApplication extends Application {
         //.build();
         //Bmob.initialize(config);
     }
+
+    public static Context getContext(){
+        return context;
+    }
+
 }

@@ -1,10 +1,12 @@
 package cz.activity;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.sqlite.SQLiteDatabase;
+
 import android.os.Bundle;
+
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.View;
@@ -21,6 +23,8 @@ import java.util.List;
 import cn.bmob.v3.BmobQuery;
 import cn.bmob.v3.exception.BmobException;
 import cn.bmob.v3.listener.FindListener;
+import cz.MyApplication;
+import cz.SharePref.SharePref;
 import cz.bean.LocalUser;
 import cz.bean.Student;
 import cz.utils.DBManager;
@@ -37,7 +41,7 @@ public class LoginActivity extends Activity {
     private Button login;
     private static boolean FLAG;
     private DBManager mgr;
-
+    private SharePref sp;
     private String stu_no, pwd;
 
     @Override
@@ -55,15 +59,15 @@ public class LoginActivity extends Activity {
         password = (EditText) findViewById(R.id.password);
         checkBox = (CheckBox) findViewById(R.id.checkBox);
         login = (Button) findViewById(R.id.login);
-
+        sp=new SharePref(MyApplication.getContext(),"stu_info");
 
     }
 
     public void initDate() {
-        SharedPreferences mySharepre = getSharedPreferences("stu_info", Activity.MODE_PRIVATE);
-        if (mySharepre.contains("stu_num")) {
-            stu_num.setText(mySharepre.getString("stu_num", ""));
-            password.setText(mySharepre.getString("password", ""));
+//        SharedPreferences mySharepre =LoginActivity.this.getSharedPreferences("stu_info", Context.MODE_PRIVATE);
+        if (sp.contains("stu_num")) {
+            stu_num.setText(sp.getString("stu_num", ""));
+            password.setText(sp.getString("password", ""));
             checkBox.setChecked(true);
         } else {
 //            stu_no=stu_num.getText().toString().trim();
@@ -75,7 +79,7 @@ public class LoginActivity extends Activity {
 
     public void doLogin() {
         login.setOnClickListener(new View.OnClickListener() {
-            SharedPreferences mySharepre = getSharedPreferences("stu_info", Activity.MODE_PRIVATE);
+//            SharedPreferences mySharepre = LoginActivity.this.getSharedPreferences("stu_info", Context.MODE_PRIVATE);
 
             @Override
             public void onClick(View v) {
@@ -87,17 +91,17 @@ public class LoginActivity extends Activity {
                     checkBox.setChecked(FLAG);
                 } else {
                     if (checkBox.isChecked()) {
-                        SharedPreferences.Editor editor = mySharepre.edit();
-                        editor.putString("stu_num", stu_no);
-                        editor.putString("password", pwd);
-                        editor.commit();
+//                        SharedPreferences.Editor editor = mySharepre.edit();
+                        sp.putString("stu_num", stu_no);
+                        sp.putString("password", pwd);
+//                        editor.commit();
 
 
                     } else {
 
-                        SharedPreferences.Editor editor = mySharepre.edit();
-                        editor.clear();
-                        editor.commit();
+//                        SharedPreferences.Editor editor = mySharepre.edit();
+                        sp.clear();
+//                        editor.commit();
                     }
                     doJudge(stu_no, pwd);
 
@@ -119,19 +123,23 @@ public class LoginActivity extends Activity {
 
                     for (Student student : object) {
                         if (pwd.equals(student.getPassword())) {
-                            SharedPreferences mySharepre = getSharedPreferences("stu_info", Activity.MODE_PRIVATE);
-                            SharedPreferences.Editor editor = mySharepre.edit();
-                            editor.putString("objectid", student.getObjectId());
-                            doDb(student);
+//                            SharedPreferences mySharepre = LoginActivity.this.getSharedPreferences("stu_info", Context.MODE_PRIVATE);
+//                            SharedPreferences.Editor editor = mySharepre.edit();
+                            sp.putString("objectid", student.getObjectId());
+                            sp.putString("classid",student.getClass_id());
+//                            editor.commit();
+//                            doDb(student);
                             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                             startActivity(intent);
+                            finish();
                             Toast.makeText(LoginActivity.this, "欢迎登陆", Toast.LENGTH_SHORT).show();
+
                         } else {
                             Toast.makeText(LoginActivity.this, "账号密码错误", Toast.LENGTH_SHORT).show();
-                            SharedPreferences mySharepre = getSharedPreferences("stu_info", Activity.MODE_PRIVATE);
-                            SharedPreferences.Editor editor = mySharepre.edit();
-                            editor.clear();
-                            editor.commit();
+//                            SharedPreferences mySharepre = getSharedPreferences("stu_info", Context.MODE_PRIVATE);
+//                            SharedPreferences.Editor editor = mySharepre.edit();
+                            sp.clear();
+//                            editor.commit();
                             FLAG = false;
                             checkBox.setChecked(FLAG);
                         }
@@ -164,7 +172,7 @@ public class LoginActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         //应用的最后一个Activity关闭时应释放DB
-        mgr.closeDB();
+//        mgr.closeDB();
     }
 
 
