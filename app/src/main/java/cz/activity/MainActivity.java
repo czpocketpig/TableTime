@@ -93,8 +93,6 @@ public class MainActivity extends AppCompatActivity {
             exitBy2Click(); // 调用双击退出函数
         }
         return false;
-
-
     }
 
     /**
